@@ -1,0 +1,5 @@
+build/
+components/
+main/certs/
+sdkconfig
+sdkconfig.old
