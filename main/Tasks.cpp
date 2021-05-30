@@ -7,10 +7,6 @@
 #include "AWS_IotClientWrapper.hpp"
 #include "SubscribeURLListener.hpp"
 
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
 #if defined(CONFIG_EXAMPLE_EMBEDDED_CERTS)
 extern const uint8_t aws_root_ca_pem_start[] asm("_binary_aws_root_ca_pem_start");
 extern const uint8_t aws_root_ca_pem_end[] asm("_binary_aws_root_ca_pem_end");
@@ -79,6 +75,3 @@ void PublishHelloWorld( void )
     AWS_IoT_ClientWrapper::Instance().Publish( publish_data );
 }
 
-#ifdef  __cplusplus
-}
-#endif

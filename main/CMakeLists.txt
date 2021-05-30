@@ -1,7 +1,9 @@
 file(GLOB AWS_IOT_SRCS ../src/aws_iot/*.cpp)
+file(GLOB CAMERA_SRCS ../src/camera/*.cpp)
+file(GLOB WEBSV_SRCS ../src/websv/*.cpp)
 
-set(COMPONENT_SRCS ${AWS_IOT_SRCS} "main.c" "Tasks.cpp")
-set(COMPONENT_ADD_INCLUDEDIRS "." "../src/aws_iot/")
+set(COMPONENT_SRCS ${AWS_IOT_SRCS} ${CAMERA_SRCS} ${WEBSV_SRCS} "main.cpp" "Tasks.cpp")
+set(COMPONENT_ADD_INCLUDEDIRS "." "../src/aws_iot/" "../src/camera/" "../src/websv/")
 
 register_component()
 

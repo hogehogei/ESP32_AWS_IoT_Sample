@@ -7,6 +7,8 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <stdio.h>
+#include <string>
+
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -24,12 +26,14 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 
+#include "Camera.hpp"
+#include "HTTPServer.hpp"
 #include "Tasks.hpp"
 
 //
 // static variables
 //
-static const int sk_Button_IONum = GPIO_NUM_34;
+static const gpio_num_t sk_Button_IONum = GPIO_NUM_34;
 static const char WifiLogInfoTag[] = "Wifi";
 static const char AppInfoTag[] = "App";
 
@@ -43,6 +47,8 @@ static EventGroupHandle_t s_WifiEventGroup;
 static uint8_t m_BaseMacAddr[6] = {0};
 static int s_ButtonPressedDown = 0;
 static int s_ButtonTrigger = 0;
+
+static httpd_handle_t s_WebServerHandle;
 
 /* The event group allows multiple bits for each event,
    but we only care about one event - are we connected
@@ -58,6 +64,10 @@ static void Initialize_App( void );
 static void Initialize_Wifi( void );
 static void WifiEventHandler( void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data );
 static void Initialize_AWS_IoTClient( void );
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void app_main(void)
 {
@@ -81,9 +91,15 @@ void app_main(void)
     Initialize_Wifi();
     Initialize_AWS_IoTClient();
 
+    if( !Camera::Initialize() ){
+        ESP_LOGE( Camera::sk_CameraTag, "Initialize camera failed." );
+    }
+    s_WebServerHandle = StartWebServer();
+
     /* Wait for WiFI to show as connected */
     xEventGroupWaitBits( s_WifiEventGroup, CONNECTED_BIT, false, true, portMAX_DELAY );
 
+    TickType_t last_wake_time = xTaskGetTickCount();
     while( 1 )
     {
         if( gpio_get_level(sk_Button_IONum) && !s_ButtonPressedDown ){
@@ -95,17 +111,24 @@ void app_main(void)
             s_ButtonTrigger = true;
         }
         if( s_ButtonTrigger ){
+            Camera::Instance().Capture();
             PublishHelloWorld();
             s_ButtonTrigger = false;
         }
 
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelayUntil( &last_wake_time, 10 / portTICK_PERIOD_MS );
     }
+    
+    StopWebServer( s_WebServerHandle );
     
     printf("Restarting now.\n");
     fflush(stdout);
     esp_restart();
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 static void Initialize_App( void )
 {
@@ -187,14 +210,18 @@ static void Initialize_Wifi( void )
                 
     ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
 
-    wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = CONFIG_WIFI_SSID,
-            .password = CONFIG_WIFI_PASSWORD
-        },
-    };
+    wifi_config_t wifi_config = {};
+    std::string ssid( CONFIG_WIFI_SSID );
+    std::string password( CONFIG_WIFI_PASSWORD );
+    int len = ssid.size();
+    std::copy( ssid.begin(), ssid.end(), wifi_config.sta.ssid );
+    wifi_config.sta.ssid[len] = '\0';
 
-    ESP_LOGI(AppInfoTag, "Setting WiFi configuration SSID %s...", wifi_config.sta.ssid);
+    len = password.size();
+    std::copy( password.begin(), password.end(), wifi_config.sta.password );
+    wifi_config.sta.password[len] = '\0';
+
+    ESP_LOGI(AppInfoTag, "Setting WiFi configuration SSID [%s], Password [%s]", wifi_config.sta.ssid, wifi_config.sta.password );
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
     ESP_ERROR_CHECK( esp_wifi_start() );
