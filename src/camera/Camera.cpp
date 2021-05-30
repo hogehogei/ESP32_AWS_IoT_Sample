@@ -139,6 +139,11 @@ Camera& Camera::Instance()
 
 bool Camera::Capture()
 {
+    // すでに有効な画像があるならまず解放
+    if( m_CapturedImage.IsValid() ){
+        m_CapturedImage = CameraFrameBuffer();
+    }
+
     CameraFrameBuffer fb( esp_camera_fb_get() );
     if( fb.IsValid() ){
         m_CapturedImage = fb;
