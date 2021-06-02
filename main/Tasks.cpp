@@ -54,7 +54,7 @@ void Initialize_AWS_IoT( void )
     instance.Subscribe( subparam );
     ESP_LOGI( AWS_IoT_ClientWrapper::sk_InfoTag, "Subscribe complete!" );
 
-    instance.StartPublish();
+    instance.StartEventLoop();
 }
 
 void PublishHelloWorld( void )

@@ -93,12 +93,12 @@ bool AWS_IoT_ClientWrapper::Disconnect()
     return rc == SUCCESS;
 }
 
-void AWS_IoT_ClientWrapper::StartPublish()
+void AWS_IoT_ClientWrapper::StartEventLoop()
 {
     runAWSIoTEventLoop( true );
 }
 
-void AWS_IoT_ClientWrapper::StopPublish()
+void AWS_IoT_ClientWrapper::StopEventLoop()
 {
     runAWSIoTEventLoop( false );
 }

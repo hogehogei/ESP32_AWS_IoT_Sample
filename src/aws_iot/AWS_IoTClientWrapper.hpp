@@ -64,8 +64,8 @@ public:
     bool Disconnect();
     bool IsConnected() const;
 
-    void StartPublish();
-    void StopPublish();
+    void StartEventLoop();
+    void StopEventLoop();
     bool Subscribe( const SubscribeTopicParam& param );
     bool Publish( const PublishTopicParam& txdata );
 
